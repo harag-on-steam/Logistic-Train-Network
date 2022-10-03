@@ -1,5 +1,6 @@
 .gitattributes export-ignore
 .gitignore export-ignore
+/.graphics export-ignore
 /.git export-ignore
 /.github export-ignore
 /.vscode export-ignore
