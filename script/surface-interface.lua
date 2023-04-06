@@ -1,6 +1,44 @@
 -- removes all data about surface connections; connection owners won't be notified
 function ClearAllSurfaceConnections()
   global.ConnectedSurfaces = {}
+  for _, delivery in pairs(global.Dispatcher.Deliveries) do
+    delivery.surface_connections = {}
+  end
+end
+
+local function is_connection_valid(connection)
+  local e1 = connection.entity1
+  local e2 = connection.entity2
+  return e1 and e2 and e1.valid and e2.valid
+end
+
+function CleanupSurfaceConnections()
+  for surfacePair, connections in pairs(global.ConnectedSurfaces) do
+    for entityPair, connection in pairs(connections) do
+      if not is_connection_valid(connection) then
+        if debug_log then log(string.format("removing invalid connection %s between surfaces %s", entityPair, surfacePair)) end
+        connections[entityPair] = nil
+      end
+    end
+
+    if not next(connections) then
+      global.ConnectedSurfaces[surfacePair] = nil
+    end
+  end
+
+  for delivery_id, delivery in pairs(global.Dispatcher.Deliveries) do
+    if delivery.surface_connections then
+      for i = #delivery.surface_connections, 1, -1 do
+        local connection = delivery.surface_connections[i]
+        if not is_connection_valid(connection) then
+          if debug_log then log(string.format("Removing invalid surface connection from delivery %d", delivery_id)) end
+          table.remove(delivery.surface_connections, i)
+        end
+      end
+    end
+  end
+
+  global.connectionCleanupRequired = false
 end
 
 -- returns the string "number1|number2" in consistent order: the smaller number is always placed first
@@ -27,6 +65,27 @@ function DisconnectSurfaces(entity1, entity2)
     local entity_pair_key = sorted_pair(entity1.unit_number, entity2.unit_number)
     if debug_log then log("removing surface connection for entities "..entity_pair_key.." between surfaces "..surface_pair_key) end
     surface_connections[entity_pair_key] = nil
+  end
+
+  -- same consistent order as in ConnectSurfaces
+  if entity1.unit_number > entity2.unit_number then
+    entity1, entity2 = entity2, entity1
+  end
+
+  -- cleaning up deliveries is important because they are transported via events. 
+  -- Factorio silently drops events that reference invalid entities.
+  for delivery_id, delivery in pairs(global.Dispatcher.Deliveries) do
+    if delivery.surface_connections then
+      for i = #delivery.surface_connections, 1, -1 do
+        local connection = delivery.surface_connections[i]
+        local e1 = connection.entity1
+        local e2 = connection.entity2
+        if (not (e1 and e2 and e1.valid and e2.valid)) or (e1 == entity1 and e2 == entity2) then
+          if debug_log then log(string.format("Removing surface connection from delivery %d", delivery_id)) end
+          table.remove(delivery.surface_connections, i)
+        end
+      end
+    end
   end
 end
 

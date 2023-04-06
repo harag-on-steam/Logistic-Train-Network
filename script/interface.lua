@@ -44,6 +44,7 @@ remote.add_interface("logistic-train-network", {
   connect_surfaces = ConnectSurfaces, -- function(entity1 :: LuaEntity, entity2 :: LuaEntity, network_id :: int32)
   disconnect_surfaces = DisconnectSurfaces, -- function(entity1 :: LuaEntity, entity2 :: LuaEntity)
   clear_all_surface_connections = ClearAllSurfaceConnections,
+  cleanup_surface_connections = CleanupSurfaceConnections,
 
   -- Re-assigns a delivery to a different train.
   reassign_delivery = ReassignDelivery, -- function(old_train_id :: uint, new_train :: LuaTrain) :: bool

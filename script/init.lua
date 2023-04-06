@@ -39,6 +39,7 @@ local function initialize(oldVersion, newVersion)
   -- { [surface1.index|surface2.index] = { [entity1.unit_number|entity2.unit_number] = { entity1, entity2, network_id } }
   -- entity_key_pairs are automatically removed during delivery processing if at least one of the referenced entities becomes invalid
   global.ConnectedSurfaces = global.ConnectedSurfaces or {}
+  global.connectionCleanupRequired = false -- the dispatcher found an invalid surface connections and deliveries still a cleanup pass
 
   -- clean obsolete global
   global.Dispatcher.Requested = nil
@@ -339,6 +340,7 @@ script.on_configuration_changed(function(data)
   end
   initializeTrainStops()
   updateAllTrains()
+  CleanupSurfaceConnections()
   registerEvents()
   log("[LTN] ".. MOD_NAME.." "..tostring(game.active_mods[MOD_NAME]).." configuration updated.")
 end)

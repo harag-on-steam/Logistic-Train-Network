@@ -146,6 +146,13 @@ function OnTick(event)
 
   elseif global.tick_state == 4 then -- raise API events
     global.tick_state = 0
+
+    if global.connectionCleanupRequired then
+      -- The dispatcher found an invalid connection which could be contained in deliveries. Events must not contain invalid references.
+      -- This is especially relevant when the mod that established the connection is removed without a chance to call disconnect_surfaces.
+      CleanupSurfaceConnections()
+    end
+
     -- raise events for mod API
     script.raise_event(on_stops_updated_event,
       {
@@ -303,6 +310,7 @@ local function find_surface_connections(surface1, surface2, force, network_id)
     else
       if debug_log then log("removing invalid surface connection "..entity_pair_key.." between surfaces "..surface_pair_key) end
       surface_connections[entity_pair_key] = nil
+      global.connectionCleanupRequired = true -- defer delivery cleanup to the API event stage
     end
   end
 
